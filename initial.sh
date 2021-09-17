@@ -60,5 +60,4 @@ virt-install --name ${MACHINE_NAME} \
   --os-type Linux --os-variant ubuntu18.04 \
   --network network=host-bridge \
   --graphics vnc,listen=0.0.0.0 --noautoconsole
-
   --console pty,target_type=serial
