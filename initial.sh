@@ -1,9 +1,12 @@
 #!/bin/bash
+
+
+generate_vm() {
 PUBLIC_KEY_PATH=$(cat ~/.ssh/id_rsa.pub)
-MACHINE_NAME="test_machine"
+MACHINE_NAME="node-0${1}"
 USER="ubuntu"
 PASS="ubuntu"
-IP="192.168.1.245"
+IP="192.168.1.24${1}"
 
 qemu-img create -b ./focal-server-cloudimg-amd64.img -f qcow2 -F qcow2 machine-${MACHINE_NAME}.qcow2 35G
 
@@ -24,11 +27,11 @@ users:
     ssh-authorized-keys:
       - ${PUBLIC_KEY_PATH}
 # only cert auth via ssh (console access can still login)
-ssh_pwauth: false
+ssh_pwauth: true
 disable_root: false
 chpasswd:
   list: |
-     ${USER{}:${PASS}
+    ${USER}:${PASS}
   expire: False
 
 package_update: true
@@ -41,23 +44,23 @@ final_message: \"The system is finally up, after \$UPTIME seconds\"" > cloud_ini
 echo "version: 2
 ethernets:
   enp1s0:
-     dhcp4: false
-     # default libvirt network
-     addresses: [ ${IP}/24 ]
-     gateway4: 192.168.1.1
-     nameservers:
-       addresses: [ 1.1.1.1,1.0.0.1 ]
-       search: [ example.com ]" > network_config_static.cfg
+    dhcp4: false
+    # default libvirt network
+    addresses: [ ${IP}/24 ]
+    gateway4: 192.168.1.1
+    nameservers:
+      addresses: [ 1.1.1.1,1.0.0.1 ]
+      search: [ example.com ]" > network_config_static.cfg
 
 
 cloud-localds -v --network-config=network_config_static.cfg ${MACHINE_NAME}-seed.img cloud_init.cfg
 
 virt-install --name ${MACHINE_NAME} \
-  --virt-type kvm --memory 2048 --vcpus 2 \
+  --virt-type kvm --memory 4096 --vcpus 4 \
   --boot hd,menu=on \
   --disk path=${MACHINE_NAME}-seed.img,device=cdrom \
   --disk path=machine-${MACHINE_NAME}.qcow2,device=disk \
   --os-type Linux --os-variant ubuntu18.04 \
   --network network=host-bridge \
   --graphics vnc,listen=0.0.0.0 --noautoconsole
-  --console pty,target_type=serial
+}
